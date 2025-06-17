@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="tr" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stok Fotoğrafçılığı Stratejisti v18</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f3f4f6; --text-color: #1f2937; --card-bg: #ffffff; --border-color: #d1d5db; --header-color: #111827; --muted-text: #6b7285; --button-text: #ffffff; --button-bg: #4f46e5; --input-bg: #ffffff; --progress-bg: #e5e7eb;
+        }
+        html.dark {
+            --bg-color: #111827; --text-color: #d1d5db; --card-bg: #1f2937; --border-color: #4b5563; --header-color: #ffffff; --muted-text: #9ca3af; --button-text: #ffffff; --button-bg: #6366f1; --input-bg: #374151; --progress-bg: #374151;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-color); transition: background-color 0.3s, color 0.3s; }
+        .loader { border: 4px solid var(--border-color); border-top: 4px solid var(--button-bg); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        .small-loader { border: 2px solid var(--border-color); border-top: 2px solid var(--button-bg); width: 16px; height: 16px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .tag { background-color: var(--bg-color); border: 1px solid var(--border-color); cursor: pointer; }
+        .quality-score { background: linear-gradient(to right, #ef4444, #f59e0b, #10b981); background-clip: text; -webkit-background-clip: text; color: transparent; }
+        .modal-overlay { transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s ease; }
+        .progress-bar div { transition: width 0.5s ease; }
+        .keyword-cloud span:hover { transform: scale(1.1); background-color: var(--button-bg); color: var(--button-text); border-color: var(--button-bg); }
+        .chat-bubble { max-width: 80%; width: fit-content; }
+        .chat-bubble-user { background-color: var(--button-bg); color: var(--button-text); border-radius: 1.25rem 1.25rem 0.25rem 1.25rem; }
+        .chat-bubble-ai { background-color: var(--bg-color); border-radius: 1.25rem 1.25rem 1.25rem 0.25rem; }
+        @keyframes typing { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+        .typing-dot { animation: typing 1.2s infinite ease-in-out; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <header class="text-center mb-6">
+            <h1 class="text-3xl md:text-4xl font-bold" style="color: var(--header-color);">Stok Fotoğrafçılığı Stratejisti <span class="text-indigo-400">v18</span></h1>
+            <p class="mt-2 text-lg" style="color: var(--muted-text);">Meta veriden fazlası: Strateji, Trend ve Rakip Analizi</p>
+        </header>
+
+        <div class="bg-[var(--card-bg)] p-4 rounded-xl shadow-lg mb-8 border border-[var(--border-color)]">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 items-end">
+                <div class="lg:col-span-1">
+                    <label for="api-key-input" class="block text-sm font-medium mb-1" style="color: var(--header-color);">Google AI API Anahtarı</label>
+                    <div class="flex"><input type="password" id="api-key-input" class="w-full p-2 border rounded-l-md" style="background-color: var(--input-bg); border-color: var(--border-color);" placeholder="API Anahtarınız..."><button id="save-api-key" class="px-4 py-2 text-sm font-semibold rounded-r-md" style="background-color: var(--button-bg); color: var(--button-text);">Kaydet</button></div>
+                </div>
+                <div class="lg:col-span-1">
+                    <label for="persona-select" class="block text-sm font-medium mb-1" style="color: var(--header-color);">✨ Strateji Modu</label>
+                    <select id="persona-select" class="w-full p-2 border rounded-md" style="background-color: var(--input-bg); border-color: var(--border-color);">
+                        <option value="Genel">Genel / Varsayılan</option><option value="Kurumsal Bloglar">Kurumsal Bloglar</option><option value="Sosyal Medya Influencer'ları">Sosyal Medya Influencer'ları</option><option value="Sanatsal Projeler">Sanatsal / Niş Projeler</option>
+                    </select>
+                </div>
+                 <div class="lg:col-span-1">
+                     <label class="block text-sm font-medium mb-1" style="color: var(--header-color);">📊 Portföy Analizi</label>
+                     <button id="open-portfolio-dashboard" class="w-full p-2 text-sm font-semibold rounded-md border" style="color: var(--text-color); background-color: var(--input-bg); border-color: var(--border-color);">Paneli Görüntüle</button>
+                </div>
+                <div class="lg:col-span-1">
+                     <div class="flex items-center justify-between mb-1">
+                        <label class="block text-sm font-medium" style="color: var(--header-color);">🛠️ Gelişmiş Araçlar</label>
+                        <button id="tools-info-button" class="w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold" style="background-color: var(--muted-text); color: var(--bg-color);" title="Araçlar Hakkında Bilgi">?</button>
+                     </div>
+                     <div class="flex gap-2">
+                        <button id="open-trend-modal" class="w-1/2 p-2 text-sm font-semibold rounded-md border" style="color: var(--text-color); background-color: var(--input-bg); border-color: var(--border-color);">Trendler</button>
+                        <button id="open-competitor-modal" class="w-1/2 p-2 text-sm font-semibold rounded-md border" style="color: var(--text-color); background-color: var(--input-bg); border-color: var(--border-color);">Rakip</button>
+                    </div>
+                </div>
+                <div class="flex items-center justify-end space-x-2">
+                     <button id="export-csv-button" class="hidden px-3 py-2 text-sm font-semibold rounded-md items-center" style="background-color: #10B981; color: var(--button-text);">CSV</button>
+                    <button id="theme-toggle" class="p-2 rounded-full" style="background-color: var(--bg-color); border: 1px solid var(--border-color);"><svg id="theme-icon-light" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg><svg id="theme-icon-dark" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg></button>
+                </div>
+            </div>
+        </div>
+
+        <main class="bg-[var(--card-bg)] p-6 md:p-8 rounded-2xl shadow-xl border border-[var(--border-color)]">
+            <div id="upload-container">
+                <h2 class="text-xl font-semibold mb-3 border-b pb-2" style="border-color: var(--border-color);">1. Adım: Fotoğrafları Yükle</h2>
+                <div class="mt-4 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-lg" id="dropzone" style="border-color: var(--border-color); background-color: var(--bg-color);"><div class="space-y-1 text-center"><svg class="mx-auto h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48" style="color: var(--muted-text);"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 4v.01M28 8l4 4h12a4 4 0 014 4v12m-32 4a4 4 0 004 4h24a4 4 0 004-4V12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg><div class="flex text-sm" style="color: var(--muted-text);"><label for="image-upload" class="relative cursor-pointer rounded-md font-medium text-indigo-400 hover:text-indigo-300"><span>Dosyaları seçin</span><input id="image-upload" type="file" class="sr-only" accept="image/jpeg, image/png, image/webp" multiple></label><p class="pl-1">veya sürükleyip bırakın</p></div><p class="text-xs" style="color: var(--muted-text);">PNG, JPG, WEBP formatında birden çok dosya seçebilirsiniz.</p></div></div>
+            </div>
+            
+            <div id="file-queue-section" class="hidden mt-6">
+                 <h2 class="text-xl font-semibold mb-3 border-b pb-2" style="border-color: var(--border-color);">2. Adım: İşlem Kuyruğu (<span id="file-count">0</span> dosya)</h2>
+                 <div id="progress-bar-container" class="my-4 hidden"><div class="w-full rounded-full h-2.5 progress-bar" style="background-color: var(--progress-bg);"><div id="progress-bar" class="h-2.5 rounded-full" style="width: 0%; background-color: var(--button-bg);"></div></div></div>
+                 <div id="file-queue-container" class="mt-4 space-y-2 max-h-64 overflow-y-auto p-3 rounded-md border" style="background-color: var(--bg-color); border-color: var(--border-color);"></div>
+                 <div class="text-center mt-6"><button id="generate-button" disabled class="w-full md:w-auto font-bold py-3 px-12 rounded-lg shadow-md transition-all duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center mx-auto" style="background-color: var(--button-bg); color: var(--button-text);"><svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg><span id="generate-button-text">Tümünü İşle</span></button></div>
+            </div>
+            
+            <div id="batch-actions-bar" class="hidden my-4 p-3 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg flex items-center justify-between">
+                <div><span id="selection-count" class="font-bold">0</span> öğe seçildi.</div>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="batch-keyword-input" placeholder="Toplu etiket ekle..." class="p-2 text-sm border rounded-md" style="background-color: var(--input-bg); border-color: var(--border-color);">
+                    <button id="batch-add-keywords" class="px-3 py-2 text-sm font-semibold rounded-md" style="background-color: var(--button-bg); color: var(--button-text);">Ekle</button>
+                </div>
+            </div>
+
+            <div id="results-section" class="hidden">
+                 <h2 class="text-2xl font-bold text-center mb-6 border-t pt-6 flex justify-center items-center gap-4" style="border-color: var(--border-color);">3. Adım: Sonuçlar <button id="select-all-button" class="px-3 py-1 text-sm rounded-md border" style="border-color: var(--border-color);">Tümünü Seç</button></h2>
+                 <div id="results-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+            </div>
+        </main>
+    </div>
+    
+    <div id="modal-container" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay bg-black bg-opacity-50 opacity-0 hidden pointer-events-none"></div>
+
+    <script>
+        const elements = {
+            docHtml: document.documentElement,
+            apiKeyInput: document.getElementById('api-key-input'), saveApiKeyButton: document.getElementById('save-api-key'),
+            themeToggle: document.getElementById('theme-toggle'), themeIcons: { light: document.getElementById('theme-icon-light'), dark: document.getElementById('theme-icon-dark') },
+            imageUpload: document.getElementById('image-upload'), generateButton: document.getElementById('generate-button'),
+            exportCsvButton: document.getElementById('export-csv-button'), fileQueueContainer: document.getElementById('file-queue-container'),
+            resultsContainer: document.getElementById('results-container'), fileQueueSection: document.getElementById('file-queue-section'),
+            resultsSection: document.getElementById('results-section'), fileCountSpan: document.getElementById('file-count'),
+            dropzone: document.getElementById('dropzone'), errorMessage: document.getElementById('error-message'),
+            generateButtonText: document.getElementById('generate-button-text'), personaSelect: document.getElementById('persona-select'),
+            progressBar: document.getElementById('progress-bar'), progressBarContainer: document.getElementById('progress-bar-container'),
+            batchActionsBar: document.getElementById('batch-actions-bar'), selectionCount: document.getElementById('selection-count'),
+            batchKeywordInput: document.getElementById('batch-keyword-input'), batchAddKeywords: document.getElementById('batch-add-keywords'),
+            selectAllButton: document.getElementById('select-all-button'), modalContainer: document.getElementById('modal-container'),
+            openTrendModalBtn: document.getElementById('open-trend-modal'),
+            openCompetitorModalBtn: document.getElementById('open-competitor-modal'),
+            toolsInfoButton: document.getElementById('tools-info-button'),
+            openPortfolioDashboardBtn: document.getElementById('open-portfolio-dashboard'),
+        };
+
+        let fileQueue = []; let generatedDataStore = {}; let selectedCards = new Set();
+        let portfolioChartInstance = null;
+        
+        function applyTheme(theme) {
+            elements.docHtml.classList.toggle('dark', theme === 'dark');
+            elements.themeIcons.light.classList.toggle('hidden', theme === 'dark');
+            elements.themeIcons.dark.classList.toggle('hidden', theme !== 'dark');
+        }
+
+        elements.themeToggle.addEventListener('click', () => {
+            const newTheme = elements.docHtml.classList.contains('dark') ? 'light' : 'dark';
+            localStorage.setItem('theme', newTheme); applyTheme(newTheme);
+        });
+
+        elements.saveApiKeyButton.addEventListener('click', () => {
+            localStorage.setItem('gemini-api-key', elements.apiKeyInput.value);
+            showModal('Onay', 'API Anahtarı tarayıcınıza başarıyla kaydedildi!');
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            applyTheme(localStorage.getItem('theme') || 'light');
+            elements.apiKeyInput.value = localStorage.getItem('gemini-api-key') || '';
+        });
+
+        elements.imageUpload.addEventListener('change', (e) => handleFiles(e.target.files));
+        elements.dropzone.addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.classList.add('border-indigo-400'); });
+        elements.dropzone.addEventListener('dragleave', (e) => e.currentTarget.classList.remove('border-indigo-400'));
+        elements.dropzone.addEventListener('drop', (e) => { e.preventDefault(); e.currentTarget.classList.remove('border-indigo-400'); handleFiles(e.dataTransfer.files); });
+
+        function handleFiles(files) {
+            [...files].forEach(file => {
+                if (!file.type.startsWith('image/')) return;
+                const fileId = `file-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+                fileQueue.push({ id: fileId, file, status: 'bekliyor' });
+                addFileToQueueUI({ id: fileId, file });
+            });
+            updateQueueUI();
+        }
+
+        function updateQueueUI() {
+            const hasFiles = fileQueue.length > 0;
+            elements.fileQueueSection.classList.toggle('hidden', !hasFiles);
+            elements.generateButton.disabled = !hasFiles;
+            elements.fileCountSpan.textContent = fileQueue.length;
+        }
+
+        function addFileToQueueUI({ id, file }) {
+            const item = document.createElement('div');
+            item.id = id;
+            item.className = 'flex items-center justify-between p-2 rounded-md border';
+            item.style.backgroundColor = 'var(--card-bg)'; item.style.borderColor = 'var(--border-color)';
+            item.innerHTML = `<div class="flex items-center space-x-3"><img src="${URL.createObjectURL(file)}" class="w-10 h-10 object-cover rounded-md" alt="Önizleme"><span class="text-sm font-medium truncate w-48" title="${file.name}">${file.name}</span></div><div id="status-${id}" class="text-sm font-semibold" style="color: var(--muted-text);">Bekliyor</div>`;
+            elements.fileQueueContainer.appendChild(item);
+        }
+
+        function updateFileStatus(id, text, colorClass, showLoader) {
+            const statusDiv = document.getElementById(`status-${id}`);
+            if (!statusDiv) return;
+            statusDiv.innerHTML = showLoader ? `<div class="loader small-loader"></div><span class="ml-2">${text}</span>` : text;
+            statusDiv.className = `text-sm font-semibold flex items-center ${colorClass}`;
+        }
+        
+        function updateProgressBar(processedCount, totalCount) {
+            const percentage = totalCount > 0 ? (processedCount / totalCount) * 100 : 0;
+            elements.progressBar.style.width = `${percentage}%`;
+        }
+
+        elements.generateButton.addEventListener('click', async () => {
+            const apiKey = elements.apiKeyInput.value;
+            if (!apiKey) { return showModal('Hata', 'Lütfen Ayarlar bölümünden API anahtarınızı girip kaydedin.'); }
+            
+            elements.generateButton.disabled = true;
+            elements.generateButtonText.textContent = 'İşleniyor...';
+            elements.resultsSection.classList.remove('hidden');
+            elements.progressBarContainer.classList.remove('hidden');
+            generatedDataStore = {};
+            let processedCount = 0;
+
+            for (const fileObject of fileQueue) {
+                if (fileObject.status !== 'bekliyor') continue;
+                try {
+                    await processFile(fileObject, apiKey);
+                } catch (error) {
+                    console.error(`Hata: ${fileObject.file.name}:`, error);
+                    updateFileStatus(fileObject.id, 'Hata', 'text-red-500', false);
+                    showModal('Dosya Hatası', `'${fileObject.file.name}' işlenirken hata oluştu: ${error.message}`);
+                }
+                processedCount++;
+                updateProgressBar(processedCount, fileQueue.length);
+            }
+            elements.generateButtonText.textContent = 'Tüm İşlemler Tamamlandı';
+            if (Object.keys(generatedDataStore).length > 0) elements.exportCsvButton.classList.remove('hidden');
+        });
+
+        async function processFile(fileObject, apiKey) {
+            updateFileStatus(fileObject.id, 'Veri oluşturuluyor...', 'text-blue-400', true);
+            const resizedImageData = await resizeImage(fileObject.file);
+            const persona = elements.personaSelect.value;
+            const resultText = await callGeminiAPI(resizedImageData, 'initial', apiKey, { persona });
+            const result = parseAPIResponse(resultText);
+            result.filename = fileObject.file.name;
+            result.title += ' Generative AI';
+            generatedDataStore[fileObject.id] = result;
+            addResultCard(fileObject, result);
+            updateFileStatus(fileObject.id, 'Başarılı', 'text-green-500', false);
+        }
+
+        function parseAPIResponse(text) {
+            const getSection = (name) => text.split(`###${name}###`)[1]?.split('###')[0]?.trim() || 'N/A';
+            const result = {
+                title: getSection('TITLE'), category: getSection('CATEGORY'), keywords: getSection('KEYWORDS'),
+                qualityScore: getSection('QUALITYSCORE'), qualityFeedback: getSection('QUALITYFEEDBACK'), releaseInfo: getSection('RELEASEINFO'),
+                titleScore: getSection('TITLESCORE'), keywordScore: getSection('KEYWORDSSCORE')
+            };
+            if (result.title === 'N/A' || result.keywords === 'N/A') {
+                 console.error("Yanıttan veri ayrılamadı:", text);
+                 throw new Error("Yapay zeka yanıtı beklenmedik formatta geldi.");
+            }
+            return result;
+        }
+
+        async function callGeminiAPI(imageData, type, apiKey, context = {}) {
+            const categories = "Hayvanlar, Binalar ve Mimari, İş Dünyası, İçecekler, Çevre, Ruh Halleri, Yiyecek, Grafik Kaynakları, Hobiler ve Boş Zaman, Endüstri, Manzaralar, Yaşam Tarzı, İnsanlar, Bitkiler ve Çiçekler, Kültür ve Din, Bilim, Sosyal Meseleler, Spor, Teknoloji, Ulaşım, Seyahat";
+            const prompts = {
+                initial: `Analyze the provided image for Adobe Stock targeting the '${context.persona}' buyer persona. Format the output STRICTLY using the specified separators.
+                ###TITLE###\n[Generate one compelling title in English under 180 characters.]
+                ###TITLESCORE###\n[Give an SEO and commercial potential score from 1-100 for the title.]
+                ###CATEGORY###\n[Suggest one category from this list: ${categories}.]
+                ###KEYWORDS###\n[Generate exactly 49 relevant, comma-separated keywords in English.]
+                ###KEYWORDSSCORE###\n[Give an SEO and commercial potential score from 1-100 for the keywords.]
+                ###QUALITYSCORE###\n[Give a technical quality score from 1 to 10.]
+                ###QUALITYFEEDBACK###\n[Provide one concise sentence of constructive feedback.]
+                ###RELEASEINFO###\n[State 'Model Release Required', 'Property Release Required', or 'No Release Needed'.]`,
+                title_variation: `Based on the original title "${context.title}", generate 3 strategic variations... Format as: "Duygusal: [title]\\nKullanım: [title]\\nKavramsal: [title]"`,
+                keyword_enrich: `Take this list of keywords: "${context.keywords}". Enrich it by adding at least 15 new conceptual, artistic, and philosophical terms. Return a new, comma-separated list.`,
+                trend_analysis: `"${context.keyword}" anahtar kelimesi için stok fotoğraf sitelerindeki güncel görsel trendleri kısaca analiz et. Stiller, konseptler ve renk paletleri üzerine odaklan. Sonucu madde işaretleri içeren kısa bir rapor olarak Türkçe formatla.`,
+                trend_chat: `You are a Stock Photography Strategist. Based on the initial trend analysis for the keyword "${context.keyword}" provided below, and the previous conversation, answer the user's question. Be helpful and provide strategic advice in Turkish.\n\nINITIAL ANALYSIS:\n${context.report}\n\nCONVERSATION HISTORY:\n${context.chatHistory}\n\nUSER QUESTION:\n${context.question}\n\nYOUR ANSWER (in Turkish):`,
+                competitor_profile_analysis: `You are a stock photography strategist. I will give you the URL of a competitor's Adobe Stock profile: ${context.profileUrl}. Analyze their entire portfolio to understand their dominant themes, subjects, and visual style. Based on this analysis, generate 3 to 5 detailed, creative, and commercially viable prompts in English for creating *alternative* images that could compete effectively. These prompts should explore gaps in their portfolio or offer a unique perspective on their popular subjects. Format the output as a numbered list of prompts.`,
+                category_keywords: `For the stock photo category "${context.category}", generate 20 highly relevant and strategic keywords that are not just descriptive, but also conceptual and thematic.`
+            };
+            const prompt = prompts[type];
+
+            const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+            if (imageData) { payload.contents[0].parts.push({ inlineData: { mimeType: "image/jpeg", data: imageData } }); }
+            
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+
+            if (!response.ok) {
+                const errorBody = await response.json(); throw new Error(errorBody.error.message || `API error ${response.status}`);
+            }
+            const result = await response.json();
+            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) return text.trim();
+            throw new Error("API'den geçerli bir yanıt alınamadı.");
+        }
+        
+        function addResultCard(fileObject, result) {
+            const card = document.createElement('div');
+            card.id = `card-${fileObject.id}`;
+            card.className = 'border rounded-lg shadow-md overflow-hidden transition-all duration-200';
+            card.style.backgroundColor = 'var(--card-bg)'; card.style.borderColor = 'var(--border-color)';
+            renderCardContent(card, fileObject, result);
+            elements.resultsContainer.appendChild(card);
+        }
+
+        function getScoreColor(score) {
+            const s = parseInt(score, 10);
+            if (s >= 80) return 'bg-green-100 text-green-800';
+            if (s >= 50) return 'bg-yellow-100 text-yellow-800';
+            return 'bg-red-100 text-red-800';
+        }
+
+        function renderCardContent(card, fileObject, result) {
+             const { filename, title, keywords, category, qualityScore, qualityFeedback, releaseInfo, titleScore, keywordScore } = result;
+             const fileId = fileObject.id;
+             const keywordHtml = `<div class="keyword-cloud flex flex-wrap gap-1 p-2 h-32 overflow-y-auto border rounded-md" style="background-color: var(--input-bg); border-color: var(--border-color);">${generateKeywordCloud(keywords)}</div>`;
+
+             card.innerHTML = `
+                <div class="relative">
+                     <img src="${URL.createObjectURL(fileObject.file)}" class="w-full h-48 object-cover" alt="Sonuç önizlemesi">
+                     <input type="checkbox" data-id="${fileId}" class="card-checkbox absolute top-2 right-2 h-6 w-6" ${selectedCards.has(fileId) ? 'checked' : ''}>
+                </div>
+                <div class="p-4">
+                    <h3 class="font-bold text-md mb-3 pb-2 border-b truncate" title="${filename}">${filename}</h3>
+                    <div class="grid grid-cols-2 gap-4 mt-3 mb-2 text-center">
+                        <div><label class="text-xs font-bold block mb-1">KALİTE PUANI</label><p class="text-2xl font-bold quality-score">${qualityScore}/10</p></div>
+                        <div><label class="text-xs font-bold block mb-1">YASAL UYARI</label><p class="text-sm font-semibold p-1 rounded" style="background-color: var(--bg-color);">${releaseInfo}</p></div>
+                    </div>
+                     <div class="mb-3"><p class="text-xs italic text-center" style="color: var(--muted-text);">${qualityFeedback}</p></div>
+                     <div class="mb-2"><label class="text-xs font-bold block mb-1">ÖNERİLEN KATEGORİ</label><button class="w-full p-2 text-sm border rounded-md text-left category-btn" data-category="${category}" data-file-id="${fileId}" style="background-color: var(--input-bg); border-color: var(--border-color);">${category}</button></div>
+                    <div class="mb-2">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-bold" style="color: var(--muted-text);">BAŞLIK</label>
+                            <span id="title-score-${fileId}" class="text-xs font-bold px-2 py-0.5 rounded-full ${getScoreColor(titleScore)}">Meta Puanı: ${titleScore}</span>
+                        </div>
+                        <div class="relative"><textarea id="title-${fileId}" rows="3" class="w-full p-2 text-sm border rounded-md" readonly>${title}</textarea><div class="absolute top-1 right-1 flex flex-col space-y-1"><button data-action="copy" data-type="title" class="p-1.5 rounded-md" title="Kopyala"><svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button><button data-action="suggest-titles" class="p-1.5 rounded-md" title="Başka Başlık Öner"><svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2H5a2 2 0 00-2 2v2"/></svg></button></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-bold" style="color: var(--muted-text);">ETİKETLER</label>
+                            <span id="keyword-score-${fileId}" class="text-xs font-bold px-2 py-0.5 rounded-full ${getScoreColor(keywordScore)}">Meta Puanı: ${keywordScore}</span>
+                        </div>
+                        <div class="relative">${keywordHtml}<div class="absolute top-1 right-1 flex flex-col space-y-1"><button data-action="copy" data-type="keywords" class="p-1.5 rounded-md" title="Kopyala"><svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button><button data-action="enrich-keywords" class="p-1.5 rounded-md" title="Etiketleri Derinleştir"><svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 6.253v11.494m-5.747-5.747H17.747"/></svg></button></div></div>
+                    </div>
+                </div>`;
+        }
+
+        function generateKeywordCloud(keywords) {
+            const keywordList = keywords.split(',').map(k => k.trim()).filter(k => k);
+            const maxImportance = keywordList.length;
+            return keywordList.map((k, i) => {
+                const importance = 1 - (i / maxImportance); // 0 to 1
+                const fontSize = 0.7 + importance * 0.6; // rem
+                return `<span class="tag inline-block font-medium mr-1 mb-1 px-2 py-1 rounded-full transition-transform duration-200" style="font-size: ${fontSize}rem;">${k}</span>`;
+            }).join('');
+        }
+
+        elements.resultsContainer.addEventListener('click', async e => {
+            const target = e.target;
+            const card = target.closest('.border.rounded-lg');
+            if (!card) return;
+            const fileId = card.id.replace('card-', '');
+
+            if (target.classList.contains('card-checkbox')) {
+                if (target.checked) selectedCards.add(fileId); else selectedCards.delete(fileId);
+                updateSelectionUI();
+            } else if (target.classList.contains('category-btn')) {
+                handleCategoryClick(target);
+            } else if (target.closest('button')) {
+                handleCardButtonClick(target.closest('button'), fileId);
+            }
+        });
+        
+        function updateSelectionUI() {
+            elements.selectionCount.textContent = selectedCards.size;
+            elements.batchActionsBar.classList.toggle('hidden', selectedCards.size === 0);
+            document.querySelectorAll('.card-checkbox').forEach(cb => {
+                const card = cb.closest('.border.rounded-lg');
+                if (selectedCards.has(cb.dataset.id)) {
+                    card.style.boxShadow = '0 0 0 3px var(--button-bg)';
+                    card.style.borderColor = 'var(--button-bg)';
+                } else {
+                    card.style.boxShadow = '';
+                    card.style.borderColor = 'var(--border-color)';
+                }
+            });
+        }
+
+        elements.selectAllButton.addEventListener('click', () => {
+            const allCardIds = fileQueue.map(f => f.id);
+            const allSelected = selectedCards.size === allCardIds.length;
+            document.querySelectorAll('.card-checkbox').forEach(cb => {
+                cb.checked = !allSelected;
+                if (!allSelected) selectedCards.add(cb.dataset.id); else selectedCards.clear();
+            });
+            updateSelectionUI();
+        });
+        
+        elements.batchAddKeywords.addEventListener('click', () => {
+            const newKeyword = elements.batchKeywordInput.value.trim();
+            if (!newKeyword || selectedCards.size === 0) return;
+
+            selectedCards.forEach(id => {
+                if (generatedDataStore[id] && !generatedDataStore[id].keywords.includes(newKeyword)) {
+                    generatedDataStore[id].keywords += `, ${newKeyword}`;
+                    const card = document.getElementById(`card-${id}`);
+                    const fileObject = fileQueue.find(f => f.id === id);
+                    if(card && fileObject) renderCardContent(card, fileObject, generatedDataStore[id]);
+                }
+            });
+            elements.batchKeywordInput.value = '';
+            showModal('Başarılı', `${selectedCards.size} öğeye "${newKeyword}" etiketi eklendi.`);
+        });
+
+        async function handleCardButtonClick(button, fileId) {
+            const action = button.dataset.action;
+            const apiKey = elements.apiKeyInput.value;
+            if (!apiKey) { showModal('Hata', 'Lütfen API anahtarınızı girin.'); return; }
+            
+            setButtonLoading(button, true);
+            try {
+                const fileObject = fileQueue.find(f => f.id === fileId);
+                if (!fileObject) return;
+                const resizedImageData = await resizeImage(fileObject.file);
+                const originalData = generatedDataStore[fileId];
+                const card = document.getElementById(`card-${fileId}`);
+
+                if (action === 'copy') {
+                    const type = button.dataset.type;
+                    const textToCopy = type === 'keywords' ? originalData.keywords : document.getElementById(`title-${fileId}`).value;
+                    copyToClipboard(textToCopy, button);
+                } else if (action === 'suggest-titles') {
+                    const titleTextarea = card.querySelector(`#title-${fileId}`);
+                    const variations = await callGeminiAPI(resizedImageData, 'title_variation', apiKey, { title: originalData.title });
+                    titleTextarea.value = `Orijinal: ${originalData.title}\n\n${variations}`;
+                    titleTextarea.rows = 6;
+                    const titleScoreSpan = card.querySelector(`#title-score-${fileId}`);
+                    if(titleScoreSpan) {
+                        titleScoreSpan.textContent = '---';
+                        titleScoreSpan.className = 'text-xs font-bold px-2 py-0.5 rounded-full';
+                    }
+                } else if (action === 'enrich-keywords') {
+                    const newKeywords = await callGeminiAPI(resizedImageData, 'keyword_enrich', apiKey, { keywords: originalData.keywords });
+                    originalData.keywords += `, ${newKeywords}`;
+                    const keywordScoreSpan = card.querySelector(`#keyword-score-${fileId}`);
+                    if(keywordScoreSpan) {
+                        keywordScoreSpan.textContent = '---';
+                        keywordScoreSpan.className = 'text-xs font-bold px-2 py-0.5 rounded-full';
+                    }
+                    renderCardContent(card, fileObject, originalData);
+                }
+            } catch (error) {
+                console.error("İşlem hatası:", error);
+                showModal("İşlem Hatası", error.message);
+            } finally {
+                setButtonLoading(button, false);
+            }
+        }
+        
+        async function handleCategoryClick(button) {
+            const category = button.dataset.category;
+            const fileId = button.dataset.fileId;
+            const apiKey = elements.apiKeyInput.value;
+            if (!apiKey) { showModal('Hata', 'Lütfen API anahtarınızı girin.'); return; }
+            setButtonLoading(button, true);
+            try {
+                const newKeywords = await callGeminiAPI(null, 'category_keywords', apiKey, { category: category });
+                const originalData = generatedDataStore[fileId];
+                originalData.keywords += `, ${newKeywords}`;
+                const fileObject = fileQueue.find(f => f.id === fileId);
+                renderCardContent(button.closest('.border.rounded-lg'), fileObject, originalData);
+            } catch (error) {
+                showModal("Kategori Etiket Hatası", error.message);
+            } finally {
+                setButtonLoading(button, false);
+            }
+        }
+
+        elements.toolsInfoButton.addEventListener('click', () => {
+            const title = 'Gelişmiş Araçlar Nedir?';
+            const message = `<div class="space-y-4">
+                                <div><h4 class="font-bold" style="color: var(--header-color);">Trend Analizi</h4><p style="color: var(--muted-text);">Bir anahtar kelime girerek pazardaki güncel görsel eğilimleri, popüler stilleri ve renk paletlerini analiz eder. Bu, ne tür içeriklerin talep gördüğünü anlamanıza yardımcı olur.</p></div>
+                                <div><h4 class="font-bold" style="color: var(--header-color);">Rakip Analizi (Beta)</h4><p style="color: var(--muted-text);">Rakip bir fotoğrafçının profilini analiz eder. Yapay zeka, rakibin stratejisini çözerek size rekabet avantajı sağlayacak yaratıcı ve alternatif görsel fikirleri (prompt) sunar.</p></div>
+                             </div>`;
+            showModal(title, message);
+        });
+
+        elements.openTrendModalBtn.addEventListener('click', () => {
+            const content = `
+                <div id="trend-analysis-initial">
+                    <p class="mb-4" style="color: var(--muted-text);">Bir anahtar kelime girerek stok fotoğrafçılığındaki güncel görsel trendler hakkında bir rapor alın ve ardından analiz üzerine sohbet edin.</p>
+                    <input type="text" id="trend-keyword-input" placeholder="örn: sürdürülebilirlik, uzaktan çalışma..." class="w-full p-2 border rounded-md mb-4" style="background-color: var(--input-bg); border-color: var(--border-color);">
+                     <button id="run-trend-analysis" class="w-full px-4 py-2 rounded-md" style="background-color: var(--button-bg); color: var(--button-text);">Analizi Başlat</button>
+                </div>
+                <div id="trend-chat-wrapper" class="hidden">
+                    <details class="mb-4 border rounded-md" style="border-color: var(--border-color);">
+                        <summary class="p-2 cursor-pointer font-semibold" style="color: var(--header-color);">İlk Analiz Raporunu Görüntüle</summary>
+                        <div id="trend-result-container" class="p-3 border-t text-sm" style="border-color: var(--border-color); background-color: var(--bg-color);"></div>
+                    </details>
+                    <div id="trend-chat-history" class="mb-2 p-3 border rounded-lg space-y-4 max-h-48 overflow-y-auto" style="background-color: var(--bg-color); border-color: var(--border-color);"></div>
+                    <div id="trend-quick-replies" class="flex flex-wrap gap-2 my-3"></div>
+                    <div class="flex gap-2">
+                        <input type="text" id="trend-chat-input" placeholder="Analiz hakkında soru sorun..." class="w-full p-2 border rounded-md" style="background-color: var(--input-bg); border-color: var(--border-color);">
+                        <button id="trend-chat-send" class="px-4 py-2 rounded-md" style="background-color: var(--button-bg); color: var(--button-text);">Gönder</button>
+                    </div>
+                </div>
+            `;
+            showModal('Yapay Zeka Trend Analizi & Sohbet', content, '');
+            
+            let initialReport = '';
+            let chatHistory = [];
+
+            const addMessageToChat = (message, sender) => {
+                const chatHistoryDiv = document.getElementById('trend-chat-history');
+                const bubble = document.createElement('div');
+                bubble.className = `chat-bubble p-3 relative ${sender === 'user' ? 'chat-bubble-user ml-auto' : 'chat-bubble-ai mr-auto'}`;
+                
+                if (sender === 'ai_typing') {
+                    bubble.innerHTML = `<div class="flex items-center space-x-1"><div class="typing-dot w-2 h-2 rounded-full" style="background-color: var(--muted-text);"></div><div class="typing-dot w-2 h-2 rounded-full" style="background-color: var(--muted-text);"></div><div class="typing-dot w-2 h-2 rounded-full" style="background-color: var(--muted-text);"></div></div>`;
+                } else {
+                     bubble.innerHTML = `${message.replace(/\n/g, '<br>')}<button class="copy-chat-btn absolute top-1 right-1 p-1 rounded-full opacity-50 hover:opacity-100" title="Yanıtı kopyala"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></button>`;
+                }
+                
+                chatHistoryDiv.appendChild(bubble);
+                chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+                return bubble;
+            };
+
+            const handleTrendChat = async (question) => {
+                if (!question) return;
+
+                const apiKey = elements.apiKeyInput.value;
+                if (!apiKey) { showModal('Hata', 'API Anahtarı gerekli.'); return; }
+                
+                addMessageToChat(question, 'user');
+                chatHistory.push(`User: ${question}`);
+                document.getElementById('trend-quick-replies').innerHTML = '';
+                const typingIndicator = addMessageToChat('', 'ai_typing');
+
+                const sendButton = document.getElementById('trend-chat-send');
+                setButtonLoading(sendButton, true);
+                
+                try {
+                    const response = await callGeminiAPI(null, 'trend_chat', apiKey, {
+                        keyword: document.getElementById('trend-keyword-input').value.trim(),
+                        report: initialReport,
+                        chatHistory: chatHistory.join('\n'),
+                        question: question
+                    });
+                    typingIndicator.remove();
+                    addMessageToChat(response, 'ai');
+                    chatHistory.push(`AI: ${response}`);
+                } catch(error) {
+                    typingIndicator.remove();
+                    addMessageToChat(`Hata: ${error.message}`, 'ai');
+                } finally {
+                    setButtonLoading(sendButton, false);
+                }
+            };
+            
+            document.getElementById('run-trend-analysis').addEventListener('click', async (e) => {
+                const btn = e.target;
+                const keyword = document.getElementById('trend-keyword-input').value.trim();
+                const apiKey = elements.apiKeyInput.value;
+                if (!keyword || !apiKey) { showModal('Hata', 'API Anahtarı ve anahtar kelime gereklidir.'); return; }
+                
+                setButtonLoading(btn, true);
+                try {
+                    const resultContainer = document.getElementById('trend-result-container');
+                    resultContainer.innerHTML = '<div class="flex justify-center"><div class="loader"></div></div>';
+                    initialReport = await callGeminiAPI(null, 'trend_analysis', apiKey, { keyword });
+                    resultContainer.innerHTML = initialReport.replace(/\n/g, '<br>').replace(/\*/g, '• ');
+                    
+                    document.getElementById('trend-analysis-initial').style.display = 'none';
+                    document.getElementById('trend-chat-wrapper').classList.remove('hidden');
+
+                    const quickRepliesContainer = document.getElementById('trend-quick-replies');
+                    const quickReplies = ["Bu trend için renk kodları ver.", "Daha fazla konsept öner.", "Bu stili hangi markalar kullanır?"];
+                    quickReplies.forEach(reply => {
+                        const button = document.createElement('button');
+                        button.className = 'text-sm px-3 py-1 rounded-full border';
+                        button.style.borderColor = 'var(--border-color)';
+                        button.textContent = reply;
+                        button.onclick = () => {
+                            document.getElementById('trend-chat-input').value = reply;
+                            handleTrendChat(reply);
+                        };
+                        quickRepliesContainer.appendChild(button);
+                    });
+
+                    document.getElementById('trend-chat-send').addEventListener('click', () => handleTrendChat(document.getElementById('trend-chat-input').value));
+                    document.getElementById('trend-chat-input').addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') handleTrendChat(e.target.value);
+                    });
+                    
+                    document.querySelector('.modal-body').addEventListener('click', (e) => {
+                        if (e.target.classList.contains('copy-chat-btn')) {
+                            const textToCopy = e.target.parentElement.textContent;
+                            copyToClipboard(textToCopy, e.target);
+                        }
+                    });
+
+                } catch(error) { showModal("Analiz Hatası", error.message); } finally { setButtonLoading(btn, false); }
+            });
+        });
+        
+        elements.openCompetitorModalBtn.addEventListener('click', () => {
+            const content = `
+                <p class="mb-4" style="color: var(--muted-text);">Rakibinizin Adobe Stock profil URL'sini yapıştırın. Yapay zeka, rakibinizin portföyünü analiz ederek size rekabet avantajı kazandıracak yeni ve yaratıcı görsel fikirleri (İngilizce prompt) üretecektir.</p>
+                <input type="text" id="competitor-profile-url-input" placeholder="https://stock.adobe.com/tr/contributor/..." class="w-full p-2 border rounded-md mb-4" style="background-color: var(--input-bg); border-color: var(--border-color);">
+                <div id="competitor-result-container" class="mt-4 p-3 rounded-md border text-sm max-h-64 overflow-y-auto" style="background-color: var(--bg-color); border-color: var(--border-color); display: none;"></div>`;
+            const buttons = `<button id="run-competitor-analysis" class="px-4 py-2 rounded-md" style="background-color: var(--button-bg); color: var(--button-text);">Analizi Başlat</button>`;
+            showModal('Rakip Profil Analizi (Beta)', content, buttons);
+            document.getElementById('run-competitor-analysis').addEventListener('click', async (e) => {
+                const btn = e.target;
+                const profileUrl = document.getElementById('competitor-profile-url-input').value.trim();
+                const apiKey = elements.apiKeyInput.value;
+                if (!profileUrl || !apiKey) { showModal('Hata', 'API Anahtarı ve profil URL\'si gereklidir.'); return; }
+                
+                setButtonLoading(btn, true);
+                try {
+                    const resultContainer = document.getElementById('competitor-result-container');
+                    resultContainer.style.display = 'block';
+                    resultContainer.innerHTML = '<div class="flex justify-center"><div class="loader"></div></div>';
+                    const report = await callGeminiAPI(null, 'competitor_profile_analysis', apiKey, { profileUrl: profileUrl });
+                    resultContainer.innerHTML = report.replace(/\n/g, '<br>').replace(/(\d\.)/g, '<br><strong class="mt-2 inline-block">$1</strong>');
+                } catch(error) { showModal("Analiz Hatası", error.message); } finally { setButtonLoading(btn, false); }
+            });
+        });
+        
+        elements.openPortfolioDashboardBtn.addEventListener('click', () => {
+            const data = Object.values(generatedDataStore);
+            if (data.length === 0) {
+                showModal('Portföy Paneli', '<p>Analiz edilecek veri bulunmuyor. Lütfen önce birkaç fotoğraf işleyin.</p>');
+                return;
+            }
+
+            const totalScore = data.reduce((sum, item) => sum + parseInt(item.qualityScore, 10), 0);
+            const avgScore = (totalScore / data.length).toFixed(1);
+
+            const allKeywords = data.flatMap(item => item.keywords.split(',').map(k => k.trim()));
+            const keywordCounts = allKeywords.reduce((acc, keyword) => {
+                acc[keyword] = (acc[keyword] || 0) + 1;
+                return acc;
+            }, {});
+
+            const categoryCounts = data.reduce((acc, item) => {
+                acc[item.category] = (acc[item.category] || 0) + 1;
+                return acc;
+            }, {});
+            const sortedCategories = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
+            const chartLabels = sortedCategories.map(c => c[0]);
+            const chartData = sortedCategories.map(c => c[1]);
+            
+            const content = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="text-center p-4 rounded-lg border" style="border-color: var(--border-color); background-color: var(--bg-color);">
+                        <h4 class="text-sm font-bold" style="color: var(--muted-text);">ORTALAMA KALİTE PUANI</h4>
+                        <p class="text-4xl font-bold quality-score">${avgScore}</p>
+                    </div>
+                    <div class="text-center p-4 rounded-lg border" style="border-color: var(--border-color); background-color: var(--bg-color);">
+                        <h4 class="text-sm font-bold" style="color: var(--muted-text);">TOPLAM FOTOĞRAF</h4>
+                        <p class="text-4xl font-bold" style="color: var(--header-color);">${data.length}</p>
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <h4 class="text-lg font-bold mb-2 text-center" style="color: var(--header-color);">Portföy Etiket Bulutu</h4>
+                    <div class="keyword-cloud flex flex-wrap gap-1 justify-center p-3 h-40 overflow-y-auto border rounded-md" style="background-color: var(--bg-color); border-color: var(--border-color);">
+                        ${generateKeywordCloud(Object.keys(keywordCounts).join(','))}
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <h4 class="text-lg font-bold mb-2 text-center" style="color: var(--header-color);">Kategori Dağılımı</h4>
+                    <div class="w-full h-64"><canvas id="portfolio-chart"></canvas></div>
+                </div>
+            `;
+            showModal('Portföy Paneli', content);
+
+            if (portfolioChartInstance) { portfolioChartInstance.destroy(); }
+            const ctx = document.getElementById('portfolio-chart').getContext('2d');
+            portfolioChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        data: chartData,
+                        backgroundColor: ['#4f46e5', '#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe'],
+                        borderColor: 'var(--card-bg)',
+                        borderWidth: 2,
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+            });
+        });
+
+
+        function setButtonLoading(button, isLoading) {
+            button.disabled = isLoading;
+            if (isLoading) {
+                if(!button.originalHTML) button.originalHTML = button.innerHTML;
+                button.innerHTML = '<div class="loader small-loader mx-auto"></div>';
+            } else { if(button.originalHTML && button.originalHTML !== '') button.innerHTML = button.originalHTML; }
+        }
+
+        function showModal(title, message, buttons = '') {
+            elements.modalContainer.innerHTML = `
+                <div class="modal-content bg-[var(--card-bg)] p-6 rounded-lg shadow-xl w-full max-w-lg border border-[var(--border-color)] scale-95">
+                    <div class="flex justify-between items-center mb-4">
+                         <h3 class="text-xl font-bold" style="color: var(--header-color);">${title}</h3>
+                         <button id="close-modal" class="font-bold text-2xl" style="color: var(--muted-text);">&times;</button>
+                    </div>
+                    <div class="modal-body max-h-[60vh] overflow-y-auto">${message}</div>
+                    <div class="flex justify-end gap-2 mt-6">
+                        ${buttons}
+                        <button id="modal-default-close" class="px-4 py-2 rounded-md border" style="border-color: var(--border-color);">Kapat</button>
+                    </div>
+                </div>`;
+            elements.modalContainer.classList.remove('hidden', 'pointer-events-none', 'opacity-0');
+            setTimeout(() => {
+                elements.modalContainer.classList.add('opacity-100');
+                elements.modalContainer.querySelector('.modal-content').classList.add('scale-100');
+            }, 10);
+            
+            const closeModal = () => {
+                elements.modalContainer.classList.remove('opacity-100');
+                elements.modalContainer.querySelector('.modal-content').classList.remove('scale-100');
+                setTimeout(() => elements.modalContainer.classList.add('hidden', 'pointer-events-none'), 300);
+            };
+            elements.modalContainer.querySelector('#close-modal').addEventListener('click', closeModal);
+            elements.modalContainer.querySelector('#modal-default-close').addEventListener('click', closeModal);
+        }
+
+        function copyToClipboard(text, button) {
+            navigator.clipboard.writeText(text).then(() => {
+                if(!button.originalHTML) button.originalHTML = button.innerHTML;
+                button.innerHTML = '<svg class="w-4 h-4 text-green-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>';
+                setTimeout(() => { if(button.originalHTML) button.innerHTML = button.originalHTML; }, 2000);
+            }).catch(err => showModal('Hata', 'Kopyalama başarısız oldu.'));
+        }
+
+        function resizeImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas'), MAX_DIM = 1024;
+                        let { width, height } = img;
+                        if (width > height) { if (width > MAX_DIM) { height *= MAX_DIM / width; width = MAX_DIM; }
+                        } else { if (height > MAX_DIM) { width *= MAX_DIM / height; height = MAX_DIM; } }
+                        canvas.width = width; canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
+                    };
+                    img.onerror = reject; img.src = e.target.result;
+                };
+                reader.onerror = reject; reader.readAsDataURL(file);
+            });
+        }
+        
+        elements.exportCsvButton.addEventListener('click', () => {
+            const dataToExport = selectedCards.size > 0 ? Array.from(selectedCards).map(id => generatedDataStore[id]) : Object.values(generatedDataStore);
+            if(dataToExport.length === 0) return showModal("Uyarı", "Dışa aktarılacak veri bulunmuyor.");
+            
+            let csvContent = "data:text/csv;charset=utf-8,Dosya Adı;Kategori;Başlık;Etiketler\n";
+            dataToExport.forEach(row => {
+                const escape = (str) => `"${(str || '').replace(/"/g, '""')}"`;
+                csvContent += `${row.filename};${escape(row.category)};${escape(row.title)};${escape(row.keywords)}\n`;
+            });
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", "adobe_stock_metadata.csv");
+            link.click();
+        });
+    </script>
+</body>
+</html>
